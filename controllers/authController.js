@@ -34,7 +34,11 @@ class AuthController {
         await Profile.create({ name: payload.name, imageUrl: payload.picture, UserId: user.id });
       }
 
-      const access_token = signToken({ email: user.email });
+      const access_token = signToken({
+        name: payload.name,
+        imageUrl: payload.picture,
+        email: payload.email,
+      });
 
       res.status(200).json({ access_token });
     } catch (error) {
