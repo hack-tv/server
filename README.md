@@ -1,2 +1,1 @@
-# server
-Hack TV server app
+# Hack TV (Server)
