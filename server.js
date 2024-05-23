@@ -6,8 +6,9 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const express = require('express');
 const cors = require('cors');
-const authRouter = require('./routes/authRoutes');
+
 const { verifyToken } = require('./helpers/jwt');
+const authRouter = require('./routes/authRoutes');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 
 const PORT = process.env.PORT || 3000;
@@ -27,13 +28,15 @@ app.use(express.json());
 app.use('/auth', authRouter);
 
 io.on('connection', (socket) => {
-  const self = verifyToken(socket.handshake.auth.token);
+  const { token } = socket.handshake.auth;
 
-  if (!self) {
+  if (!token) {
     socket.disconnect();
   }
 
-  socket.emit('self', { self: { ...self, socketId: socket.id } });
+  const self = { ...verifyToken(token), socketId: socket.id };
+
+  socket.emit('self', { self });
 
   socket.on('call:start', ({ remoteId, self, signal }) => {
     io.to(remoteId).emit('call:started', { remote: self, signal });
@@ -46,23 +49,6 @@ io.on('connection', (socket) => {
   socket.on('call:end', ({ remoteId }) => {
     io.to(remoteId).emit('call:ended');
   });
-
-  // socket.emit('self', socket.id);
-
-  // socket.on('call:start', ({ selfId, remoteId, signal }) => {
-  //   // console.log({ selfId, remoteId }, '<<< ini call:start');
-  //   io.to(remoteId).emit('call:started', { remoteId: selfId, signal });
-  // });
-
-  // socket.on('call:accept', ({ selfId, remoteId, signal }) => {
-  //   // console.log({ selfId, remoteId }, '<<< ini call:accept');
-  //   io.to(remoteId).emit('call:accepted', { remoteId: selfId, signal });
-  // });
-
-  // socket.on('call:end', ({ remoteId }) => {
-  //   // console.log({ remoteId }, '<<< ini call:end');
-  //   io.to(remoteId).emit('call:ended');
-  // });
 });
 
 app.use(errorMiddleware);
